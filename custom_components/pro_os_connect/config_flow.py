@@ -11,6 +11,7 @@ from pro_os_connect import ProOSConnect
 import probatio
 
 from .const import (
+    COMMAND_SETTLE_TIME,
     CONF_MAX_SETPOINT,
     DOMAIN,
     LOGGER,
@@ -21,7 +22,6 @@ from .const import (
 
 # The device clamps a too high setpoint to its maximum
 MAX_SETPOINT_PROBE = 2**31 - 1
-SETPOINT_SETTLE_TIME = 0.2
 
 
 class InvalidResponse(Exception):
@@ -50,7 +50,7 @@ def _detect_max_setpoint(host: str) -> int:
             raise InvalidResponse
         client.set_setpoint(MAX_SETPOINT_PROBE)
         try:
-            time.sleep(SETPOINT_SETTLE_TIME)
+            time.sleep(COMMAND_SETTLE_TIME)
             probed_telemetry = client.get_telemetry()
         finally:
             client.set_setpoint(telemetry.setpoint)

@@ -7,11 +7,18 @@ from typing import override
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pro_os_connect import ProOSConnect
 from pro_os_connect.common import TelemetryFields
 
-from .const import DOMAIN, LOGGER, PRO_OS_CONNECT_ERRORS, SCAN_INTERVAL
+from .const import (
+    COMMAND_SETTLE_TIME,
+    DOMAIN,
+    LOGGER,
+    PRO_OS_CONNECT_ERRORS,
+    SCAN_INTERVAL,
+)
 
 type ProOSConnectConfigEntry = ConfigEntry[ProOSConnectDataUpdateCoordinator]
 
@@ -34,6 +41,10 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
             config_entry=entry,
             name=f"Pro OS Connect {entry.title}",
             update_interval=SCAN_INTERVAL,
+            # Refresh once all commands of a service call have settled
+            request_refresh_debouncer=Debouncer(
+                hass, LOGGER, cooldown=COMMAND_SETTLE_TIME, immediate=False
+            ),
         )
         self.client = client
         # The client shares a single socket, so calls must not overlap

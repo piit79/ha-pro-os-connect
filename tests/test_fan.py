@@ -29,6 +29,8 @@ from pytest_homeassistant_custom_component.common import (
 )
 from syrupy.assertion import SnapshotAssertion
 
+from custom_components.pro_os_connect.const import COMMAND_SETTLE_TIME
+
 ENTITY_ID = "fan.pro_os_connect_2511000618"
 
 
@@ -97,6 +99,36 @@ async def test_set_speed(
 
     assert mock_pro_os_connect.set_setpoint.mock_calls == [call(setpoint)]
     mock_pro_os_connect.pump_start.assert_called_once()
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_refresh_after_command(
+    hass: HomeAssistant,
+    mock_pro_os_connect: MagicMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test the telemetry is refreshed once the commands have settled."""
+    mock_pro_os_connect.get_telemetry.reset_mock()
+
+    await hass.services.async_call(
+        FAN_DOMAIN,
+        SERVICE_SET_PERCENTAGE,
+        {ATTR_ENTITY_ID: ENTITY_ID, ATTR_PERCENTAGE: 100},
+        blocking=True,
+    )
+
+    # The device needs time to apply the commands before reporting them
+    mock_pro_os_connect.get_telemetry.assert_not_called()
+
+    freezer.tick(timedelta(seconds=COMMAND_SETTLE_TIME))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    # Setting the setpoint and starting the pump are refreshed together
+    mock_pro_os_connect.get_telemetry.assert_called_once()
+    state = hass.states.get(ENTITY_ID)
+    assert state
+    assert state.attributes[ATTR_PERCENTAGE] == 100
 
 
 @pytest.mark.parametrize(
