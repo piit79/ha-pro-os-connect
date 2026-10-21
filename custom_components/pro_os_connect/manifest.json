@@ -1,0 +1,25 @@
+{
+  "domain": "pro_os_connect",
+  "name": "Pro OS Connect",
+  "categories": [
+    "climate.air_purifiers_humidifiers"
+  ],
+  "codeowners": [
+    "@piit79"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/piit79/ha-pro-os-connect",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/piit79/ha-pro-os-connect/issues",
+  "loggers": [
+    "pro_os_connect"
+  ],
+  "requirements": [
+    "pro_os_connect_py==0.8.6"
+  ],
+  "version": "0.1.0",
+  "zeroconf": [
+    "_iq2._tcp.local."
+  ]
+}

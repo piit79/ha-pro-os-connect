@@ -1,0 +1,16 @@
+{
+  "timestamp": 12345678,
+  "alarms": 0,
+  "setpoint": 200,
+  "flow_rate": 198.73,
+  "combined_pressure": 1523.5,
+  "pre_pressure": 312.25,
+  "inlet_pressure": 45.5,
+  "pump_level": 52,
+  "real_combined_blockage": 23,
+  "real_pre_blockage": 41,
+  "real_inlet_blockage": 3,
+  "compensated_combined_blockage": 21,
+  "compensated_pre_blockage": 38,
+  "is_running": 1
+}

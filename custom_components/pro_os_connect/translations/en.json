@@ -1,0 +1,72 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured",
+            "cannot_connect": "Failed to connect",
+            "not_pro_os_connect_device": "The discovered device is not a Pro OS Connect controller.",
+            "unknown": "Unexpected error"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "unknown": "Unexpected error"
+        },
+        "flow_title": "Pro OS Connect {serial_number}",
+        "step": {
+            "confirm_running": {
+                "description": "The fume extractor is currently running. To detect its maximum flow rate, its setpoint will briefly be changed and then restored. Do you want to continue?",
+                "title": "Fume extractor is running"
+            },
+            "user": {
+                "data": {
+                    "host": "Host"
+                },
+                "data_description": {
+                    "host": "The hostname or IP address of your Pro OS Connect controller."
+                },
+                "description": "Set up your Donaldson BOFA fume extractor with a Pro OS Connect controller."
+            },
+            "zeroconf_confirm": {
+                "description": "Do you want to set up the Pro OS Connect controller with serial number {serial_number} at {host}?"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "alarms": {
+                "name": "Alarms"
+            },
+            "combined_blockage": {
+                "name": "Combined filter blockage"
+            },
+            "flow_rate": {
+                "name": "Flow rate"
+            },
+            "pre_blockage": {
+                "name": "Pre-filter blockage"
+            },
+            "pump_level": {
+                "name": "Pump level"
+            },
+            "real_combined_blockage": {
+                "name": "Real combined filter blockage"
+            },
+            "real_inlet_blockage": {
+                "name": "Real inlet blockage"
+            },
+            "real_pre_blockage": {
+                "name": "Real pre-filter blockage"
+            },
+            "uptime": {
+                "name": "Uptime"
+            }
+        }
+    },
+    "exceptions": {
+        "communication_error": {
+            "message": "An error occurred while communicating with the Pro OS Connect device: {error}"
+        },
+        "invalid_response": {
+            "message": "The Pro OS Connect device returned an invalid response."
+        }
+    }
+}

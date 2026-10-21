@@ -1,0 +1,30 @@
+{
+  "entity": {
+    "sensor": {
+      "alarms": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "combined_blockage": {
+        "default": "mdi:air-filter"
+      },
+      "flow_rate": {
+        "default": "mdi:weather-windy"
+      },
+      "pre_blockage": {
+        "default": "mdi:air-filter"
+      },
+      "pump_level": {
+        "default": "mdi:pump"
+      },
+      "real_combined_blockage": {
+        "default": "mdi:air-filter"
+      },
+      "real_inlet_blockage": {
+        "default": "mdi:air-filter"
+      },
+      "real_pre_blockage": {
+        "default": "mdi:air-filter"
+      }
+    }
+  }
+}
