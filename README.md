@@ -9,6 +9,10 @@ It polls the controller over the local network every 10 seconds and provides:
 
 Devices are discovered automatically using zeroconf, or can be added manually by host name or IP address.
 
+### Disclaimer
+
+This integration was created using Claude Code.
+
 ## Installation
 
 ### HACS

@@ -9,16 +9,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pro_os_connect import ProOSConnect
+from pro_os_connect import ProOSConnect, ProOSConnectError
 from pro_os_connect.common import TelemetryFields
 
-from .const import (
-    COMMAND_SETTLE_TIME,
-    DOMAIN,
-    LOGGER,
-    PRO_OS_CONNECT_ERRORS,
-    SCAN_INTERVAL,
-)
+from .const import COMMAND_SETTLE_TIME, DOMAIN, LOGGER, SCAN_INTERVAL
 
 type ProOSConnectConfigEntry = ConfigEntry[ProOSConnectDataUpdateCoordinator]
 
@@ -51,13 +45,9 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
         self._lock = asyncio.Lock()
 
     async def async_execute[*Ts, T](self, func: Callable[[*Ts], T], *args: *Ts) -> T:
-        """Run a blocking client call, reconnecting on the next call after an error."""
+        """Run a blocking client call."""
         async with self._lock:
-            try:
-                return await self.hass.async_add_executor_job(func, *args)
-            except PRO_OS_CONNECT_ERRORS:
-                self.client.disconnect()
-                raise
+            return await self.hass.async_add_executor_job(func, *args)
 
     async def async_send_command[*Ts](
         self, func: Callable[[*Ts], object], *args: *Ts
@@ -65,7 +55,7 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
         """Send a command to the device and refresh the telemetry."""
         try:
             await self.async_execute(func, *args)
-        except PRO_OS_CONNECT_ERRORS as err:
+        except ProOSConnectError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="communication_error",
@@ -78,7 +68,7 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
         """Fetch telemetry from the device."""
         try:
             telemetry = await self.async_execute(self.client.get_telemetry)
-        except PRO_OS_CONNECT_ERRORS as err:
+        except ProOSConnectError as err:
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="communication_error",

@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
-from pro_os_connect import ProOSConnect
+from pro_os_connect import ProOSConnect, ProOSConnectError
 import probatio
 
 from .const import (
@@ -15,7 +15,6 @@ from .const import (
     CONF_MAX_SETPOINT,
     DOMAIN,
     LOGGER,
-    PRO_OS_CONNECT_ERRORS,
     SETPOINT_STEP,
     ZEROCONF_HOSTNAME_PREFIX,
 )
@@ -82,7 +81,7 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 serial_number, is_running = await self.hass.async_add_executor_job(
                     _get_device_info, host
                 )
-            except (*PRO_OS_CONNECT_ERRORS, InvalidResponse):
+            except ProOSConnectError, InvalidResponse:
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
                 LOGGER.exception("Unexpected exception")
@@ -140,7 +139,7 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 _, is_running = await self.hass.async_add_executor_job(
                     _get_device_info, self._host
                 )
-            except (*PRO_OS_CONNECT_ERRORS, InvalidResponse):
+            except ProOSConnectError, InvalidResponse:
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
                 LOGGER.exception("Unexpected exception")
@@ -173,7 +172,7 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
             max_setpoint = await self.hass.async_add_executor_job(
                 _detect_max_setpoint, self._host
             )
-        except (*PRO_OS_CONNECT_ERRORS, InvalidResponse):
+        except ProOSConnectError, InvalidResponse:
             return self.async_abort(reason="cannot_connect")
         except Exception:  # noqa: BLE001
             LOGGER.exception("Unexpected exception")
