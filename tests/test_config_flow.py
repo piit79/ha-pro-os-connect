@@ -112,9 +112,6 @@ async def test_user_flow_running(
             id="response_error",
         ),
         pytest.param(
-            "get_telemetry", OSError, None, "cannot_connect", id="socket_error"
-        ),
-        pytest.param(
             "get_protocol_version", None, None, "cannot_connect", id="no_protocol"
         ),
         pytest.param("get_serial_number", None, "", "cannot_connect", id="no_serial"),

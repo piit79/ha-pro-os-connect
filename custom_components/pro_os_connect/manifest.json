@@ -9,7 +9,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/piit79/ha-pro-os-connect/issues",
   "loggers": ["pro_os_connect"],
-  "requirements": ["pro_os_connect_py==0.8.6"],
-  "version": "0.2.0",
+  "requirements": ["pro_os_connect_py==0.9.1"],
+  "version": "0.3.0",
   "zeroconf": ["_iq2._tcp.local."]
 }

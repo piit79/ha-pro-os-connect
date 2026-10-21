@@ -3,8 +3,6 @@
 from datetime import timedelta
 import logging
 
-from pro_os_connect import ProOSConnectError, ProOSConnectRequestError
-
 DOMAIN = "pro_os_connect"
 LOGGER = logging.getLogger(__package__)
 
@@ -19,6 +17,3 @@ COMMAND_SETTLE_TIME = 0.1
 SETPOINT_STEP = 10
 
 ZEROCONF_HOSTNAME_PREFIX = "bofa_"
-
-# The library doesn't wrap socket errors raised on an already open connection
-PRO_OS_CONNECT_ERRORS = (ProOSConnectError, ProOSConnectRequestError, OSError)

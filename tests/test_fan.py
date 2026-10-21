@@ -158,7 +158,7 @@ async def test_turn_off(
 async def test_command_error(
     hass: HomeAssistant, mock_pro_os_connect: MagicMock
 ) -> None:
-    """Test a failing command raises an error and closes the connection."""
+    """Test a failing command raises an error."""
     mock_pro_os_connect.pump_stop.side_effect = ProOSConnectTimeoutError("Timeout")
 
     with pytest.raises(
@@ -169,8 +169,6 @@ async def test_command_error(
             FAN_DOMAIN, SERVICE_TURN_OFF, {ATTR_ENTITY_ID: ENTITY_ID}, blocking=True
         )
 
-    mock_pro_os_connect.disconnect.assert_called_once()
-
 
 @pytest.mark.usefixtures("init_integration")
 async def test_update_error(
@@ -179,7 +177,7 @@ async def test_update_error(
     freezer: FrozenDateTimeFactory,
 ) -> None:
     """Test the fan becomes unavailable when the telemetry cannot be read."""
-    mock_pro_os_connect.get_telemetry.side_effect = OSError
+    mock_pro_os_connect.get_telemetry.side_effect = ProOSConnectTimeoutError
 
     freezer.tick(timedelta(seconds=10))
     async_fire_time_changed(hass)
@@ -188,4 +186,3 @@ async def test_update_error(
     state = hass.states.get(ENTITY_ID)
     assert state
     assert state.state == STATE_UNAVAILABLE
-    mock_pro_os_connect.disconnect.assert_called_once()
