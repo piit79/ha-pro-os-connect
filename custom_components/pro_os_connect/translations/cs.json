@@ -1,0 +1,72 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Zařízení je již nastaveno",
+            "cannot_connect": "Nepodařilo se připojit",
+            "not_pro_os_connect_device": "Nalezené zařízení není řídicí jednotka Pro OS Connect.",
+            "unknown": "Neočekávaná chyba"
+        },
+        "error": {
+            "cannot_connect": "Nepodařilo se připojit",
+            "unknown": "Neočekávaná chyba"
+        },
+        "flow_title": "Pro OS Connect {serial_number}",
+        "step": {
+            "confirm_running": {
+                "description": "Odsavač je právě v provozu. Pro zjištění jeho maximálního průtoku bude jeho nastavená hodnota krátce změněna a poté obnovena. Chcete pokračovat?",
+                "title": "Odsavač je v provozu"
+            },
+            "user": {
+                "data": {
+                    "host": "Hostitel"
+                },
+                "data_description": {
+                    "host": "Název hostitele nebo IP adresa vaší řídicí jednotky Pro OS Connect."
+                },
+                "description": "Nastavte svůj odsavač Donaldson BOFA s řídicí jednotkou Pro OS Connect."
+            },
+            "zeroconf_confirm": {
+                "description": "Chcete nastavit řídicí jednotku Pro OS Connect se sériovým číslem {serial_number} na adrese {host}?"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "alarms": {
+                "name": "Alarmy"
+            },
+            "combined_blockage": {
+                "name": "Celkové zanesení filtrů"
+            },
+            "flow_rate": {
+                "name": "Průtok"
+            },
+            "pre_blockage": {
+                "name": "Zanesení předfiltru"
+            },
+            "pump_level": {
+                "name": "Výkon čerpadla"
+            },
+            "real_combined_blockage": {
+                "name": "Skutečné celkové zanesení filtrů"
+            },
+            "real_inlet_blockage": {
+                "name": "Skutečné zanesení vstupu"
+            },
+            "real_pre_blockage": {
+                "name": "Skutečné zanesení předfiltru"
+            },
+            "uptime": {
+                "name": "Doba provozu"
+            }
+        }
+    },
+    "exceptions": {
+        "communication_error": {
+            "message": "Při komunikaci se zařízením Pro OS Connect došlo k chybě: {error}"
+        },
+        "invalid_response": {
+            "message": "Zařízení Pro OS Connect vrátilo neplatnou odpověď."
+        }
+    }
+}
