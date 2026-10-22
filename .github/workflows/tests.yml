@@ -2,7 +2,11 @@ name: Tests
 
 on:
   push:
+    # Tags are tested by the release workflow
+    branches:
+      - "**"
   pull_request:
+  workflow_call:
   workflow_dispatch:
 
 jobs:
