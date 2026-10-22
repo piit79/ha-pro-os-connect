@@ -12,6 +12,8 @@ from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     load_json_object_fixture,
 )
+from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
+from syrupy.assertion import SnapshotAssertion
 
 from custom_components.pro_os_connect.const import CONF_MAX_SETPOINT, DOMAIN
 
@@ -23,6 +25,13 @@ MAX_SETPOINT = 370
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Enable loading the custom integration in all tests."""
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """Return the snapshot fixture with the Home Assistant extension."""
+    # Whether syrupy's or Home Assistant's plugin fixture wins depends on plugin load order
+    return snapshot.use_extension(HomeAssistantSnapshotExtension)
 
 
 @pytest.fixture
