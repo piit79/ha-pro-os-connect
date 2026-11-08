@@ -44,6 +44,14 @@ SENSORS: tuple[ProOSConnectSensorEntityDescription, ...] = (
         value_fn=lambda data: data.flow_rate if data.is_running else 0,
     ),
     ProOSConnectSensorEntityDescription(
+        key="target_flow_rate",
+        translation_key="target_flow_rate",
+        device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
+        native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.setpoint,
+    ),
+    ProOSConnectSensorEntityDescription(
         key="compensated_combined_blockage",
         translation_key="combined_blockage",
         native_unit_of_measurement=UnitOfRatio.PERCENTAGE,

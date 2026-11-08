@@ -430,6 +430,64 @@
     'state': '41',
   })
 # ---
+# name: test_entities[sensor.pro_os_connect_2511000618_target_flow_rate-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'sensor',
+    'entity_category': None,
+    'entity_id': 'sensor.pro_os_connect_2511000618_target_flow_rate',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Target flow rate',
+    'options': dict({
+      'sensor': dict({
+        'suggested_display_precision': 0,
+      }),
+    }),
+    'original_device_class': <SensorDeviceClass.VOLUME_FLOW_RATE: 'volume_flow_rate'>,
+    'original_icon': None,
+    'original_name': 'Target flow rate',
+    'platform': 'pro_os_connect',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'target_flow_rate',
+    'unique_id': '2511000618_target_flow_rate',
+    'unit_of_measurement': <UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR: 'm³/h'>,
+  })
+# ---
+# name: test_entities[sensor.pro_os_connect_2511000618_target_flow_rate-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'volume_flow_rate',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Pro OS Connect 2511000618 Target flow rate',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: <UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR: 'm³/h'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.pro_os_connect_2511000618_target_flow_rate',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': '200',
+  })
+# ---
 # name: test_entities[sensor.pro_os_connect_2511000618_uptime-entry]
   EntityRegistryEntrySnapshot({
     'aliases': list([

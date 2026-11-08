@@ -56,6 +56,9 @@
             "real_pre_blockage": {
                 "name": "Real pre-filter blockage"
             },
+            "target_flow_rate": {
+                "name": "Target flow rate"
+            },
             "uptime": {
                 "name": "Uptime"
             }

@@ -24,6 +24,9 @@
       },
       "real_pre_blockage": {
         "default": "mdi:air-filter"
+      },
+      "target_flow_rate": {
+        "default": "mdi:weather-windy"
       }
     }
   }
