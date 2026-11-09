@@ -15,10 +15,15 @@ from pytest_homeassistant_custom_component.common import (
 from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from syrupy.assertion import SnapshotAssertion
 
-from custom_components.pro_os_connect.const import CONF_MAX_SETPOINT, DOMAIN
+from custom_components.pro_os_connect.const import (
+    CONF_MAX_SETPOINT,
+    CONF_MIN_SETPOINT,
+    DOMAIN,
+)
 
 HOST = "10.10.103.35"
 SERIAL_NUMBER = "2511000618"
+MIN_SETPOINT = 100
 MAX_SETPOINT = 370
 
 
@@ -40,8 +45,13 @@ def mock_config_entry() -> MockConfigEntry:
     return MockConfigEntry(
         title=f"Pro OS Connect {SERIAL_NUMBER}",
         domain=DOMAIN,
-        data={CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT},
+        data={
+            CONF_HOST: HOST,
+            CONF_MIN_SETPOINT: MIN_SETPOINT,
+            CONF_MAX_SETPOINT: MAX_SETPOINT,
+        },
         unique_id=SERIAL_NUMBER,
+        minor_version=2,
     )
 
 
@@ -80,10 +90,10 @@ def mock_pro_os_connect(
         )
 
         def _set_setpoint(setpoint: int) -> bool:
-            # The device clamps the setpoint to its maximum
+            # The device clamps the setpoint to its range
             client.get_telemetry.return_value = replace(
                 client.get_telemetry.return_value,
-                setpoint=min(setpoint, MAX_SETPOINT),
+                setpoint=min(max(setpoint, MIN_SETPOINT), MAX_SETPOINT),
             )
             return True
 

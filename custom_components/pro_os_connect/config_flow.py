@@ -13,13 +13,14 @@ import probatio
 from .const import (
     COMMAND_SETTLE_TIME,
     CONF_MAX_SETPOINT,
+    CONF_MIN_SETPOINT,
     DOMAIN,
     LOGGER,
-    SETPOINT_STEP,
     ZEROCONF_HOSTNAME_PREFIX,
 )
 
-# The device clamps a too high setpoint to its maximum
+# The device clamps a too low or too high setpoint to its minimum or maximum
+MIN_SETPOINT_PROBE = 1
 MAX_SETPOINT_PROBE = 2**31 - 1
 
 
@@ -41,29 +42,38 @@ def _get_device_info(host: str) -> tuple[str, bool]:
     return serial_number, bool(telemetry.is_running)
 
 
-def _detect_max_setpoint(host: str) -> int:
-    """Detect the maximum setpoint of the device, restoring the current one."""
+def _probe_setpoint(client: ProOSConnect, setpoint: int) -> int:
+    """Set a setpoint and return the one the device applied."""
+    client.set_setpoint(setpoint)
+    time.sleep(COMMAND_SETTLE_TIME)
+    if (telemetry := client.get_telemetry()) is None:
+        raise InvalidResponse
+    return telemetry.setpoint
+
+
+def _detect_setpoint_range(host: str) -> tuple[int, int]:
+    """Detect the minimum and maximum setpoint, restoring the current one."""
     client = ProOSConnect(host)
     try:
         if (telemetry := client.get_telemetry()) is None:
             raise InvalidResponse
-        client.set_setpoint(MAX_SETPOINT_PROBE)
         try:
-            time.sleep(COMMAND_SETTLE_TIME)
-            probed_telemetry = client.get_telemetry()
+            min_setpoint = _probe_setpoint(client, MIN_SETPOINT_PROBE)
+            max_setpoint = _probe_setpoint(client, MAX_SETPOINT_PROBE)
         finally:
             client.set_setpoint(telemetry.setpoint)
     finally:
         client.disconnect()
-    if probed_telemetry is None or probed_telemetry.setpoint < SETPOINT_STEP:
+    if not 0 < min_setpoint <= max_setpoint:
         raise InvalidResponse
-    return probed_telemetry.setpoint
+    return min_setpoint, max_setpoint
 
 
 class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Pro OS Connect."""
 
     VERSION = 1
+    MINOR_VERSION = 2
 
     _host: str
     _serial_number: str
@@ -167,10 +177,10 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="confirm_running")
 
     async def _async_create_entry(self) -> ConfigFlowResult:
-        """Detect the maximum setpoint and create the config entry."""
+        """Detect the setpoint range and create the config entry."""
         try:
-            max_setpoint = await self.hass.async_add_executor_job(
-                _detect_max_setpoint, self._host
+            min_setpoint, max_setpoint = await self.hass.async_add_executor_job(
+                _detect_setpoint_range, self._host
             )
         except ProOSConnectError, InvalidResponse:
             return self.async_abort(reason="cannot_connect")
@@ -180,5 +190,9 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_create_entry(
             title=f"Pro OS Connect {self._serial_number}",
-            data={CONF_HOST: self._host, CONF_MAX_SETPOINT: max_setpoint},
+            data={
+                CONF_HOST: self._host,
+                CONF_MIN_SETPOINT: min_setpoint,
+                CONF_MAX_SETPOINT: max_setpoint,
+            },
         )

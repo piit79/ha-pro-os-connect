@@ -42,8 +42,8 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Pro OS Connect 2511000618',
-      <FanEntityStateAttribute.PERCENTAGE: 'percentage'>: 54,
-      <FanEntityStateAttribute.PERCENTAGE_STEP: 'percentage_step'>: 2.7027027027027026,
+      <FanEntityStateAttribute.PERCENTAGE: 'percentage'>: 39,
+      <FanEntityStateAttribute.PERCENTAGE_STEP: 'percentage_step'>: 3.5714285714285716,
       <FanEntityStateAttribute.PRESET_MODE: 'preset_mode'>: None,
       <FanEntityCapabilityAttribute.PRESET_MODES: 'preset_modes'>: None,
       <EntityStateAttribute.SUPPORTED_FEATURES: 'supported_features'>: <FanEntityFeature: 49>,

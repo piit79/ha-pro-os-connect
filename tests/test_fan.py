@@ -31,6 +31,8 @@ from syrupy.assertion import SnapshotAssertion
 
 from custom_components.pro_os_connect.const import COMMAND_SETTLE_TIME
 
+from .conftest import MIN_SETPOINT
+
 ENTITY_ID = "fan.pro_os_connect_2511000618"
 
 
@@ -76,9 +78,9 @@ async def test_turn_on(hass: HomeAssistant, mock_pro_os_connect: MagicMock) -> N
     ("service", "percentage", "setpoint"),
     [
         pytest.param(SERVICE_TURN_ON, 100, 370, id="turn_on_max"),
-        pytest.param(SERVICE_TURN_ON, 1, 10, id="turn_on_min"),
-        pytest.param(SERVICE_SET_PERCENTAGE, 50, 190, id="set_percentage_half"),
-        pytest.param(SERVICE_SET_PERCENTAGE, 3, 20, id="set_percentage_round_up"),
+        pytest.param(SERVICE_TURN_ON, 1, 100, id="turn_on_min"),
+        pytest.param(SERVICE_SET_PERCENTAGE, 50, 230, id="set_percentage_half"),
+        pytest.param(SERVICE_SET_PERCENTAGE, 4, 110, id="set_percentage_round_up"),
     ],
 )
 @pytest.mark.usefixtures("init_integration")
@@ -131,27 +133,39 @@ async def test_refresh_after_command(
     assert state.attributes[ATTR_PERCENTAGE] == 100
 
 
-@pytest.mark.parametrize(
-    ("service", "data"),
-    [
-        pytest.param(SERVICE_TURN_OFF, {}, id="turn_off"),
-        pytest.param(SERVICE_SET_PERCENTAGE, {ATTR_PERCENTAGE: 0}, id="percentage_0"),
-    ],
-)
 @pytest.mark.usefixtures("init_integration")
-async def test_turn_off(
-    hass: HomeAssistant,
-    mock_pro_os_connect: MagicMock,
-    service: str,
-    data: dict[str, int],
-) -> None:
-    """Test turning off the fan stops the extractor."""
+async def test_turn_off(hass: HomeAssistant, mock_pro_os_connect: MagicMock) -> None:
+    """Test turning off the fan stops the extractor and keeps the setpoint."""
     await hass.services.async_call(
-        FAN_DOMAIN, service, {ATTR_ENTITY_ID: ENTITY_ID, **data}, blocking=True
+        FAN_DOMAIN, SERVICE_TURN_OFF, {ATTR_ENTITY_ID: ENTITY_ID}, blocking=True
     )
 
     mock_pro_os_connect.pump_stop.assert_called_once()
     mock_pro_os_connect.set_setpoint.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "service",
+    [
+        pytest.param(SERVICE_TURN_ON, id="turn_on"),
+        pytest.param(SERVICE_SET_PERCENTAGE, id="set_percentage"),
+    ],
+)
+@pytest.mark.usefixtures("init_integration")
+async def test_set_speed_zero(
+    hass: HomeAssistant, mock_pro_os_connect: MagicMock, service: str
+) -> None:
+    """Test setting the speed to zero sets the minimum setpoint and stops."""
+    await hass.services.async_call(
+        FAN_DOMAIN,
+        service,
+        {ATTR_ENTITY_ID: ENTITY_ID, ATTR_PERCENTAGE: 0},
+        blocking=True,
+    )
+
+    assert mock_pro_os_connect.set_setpoint.mock_calls == [call(MIN_SETPOINT)]
+    mock_pro_os_connect.pump_stop.assert_called_once()
+    mock_pro_os_connect.pump_start.assert_not_called()
 
 
 @pytest.mark.usefixtures("init_integration")

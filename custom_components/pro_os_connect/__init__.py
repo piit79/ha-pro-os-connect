@@ -4,6 +4,7 @@ from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
 from pro_os_connect import ProOSConnect
 
+from .const import CONF_MIN_SETPOINT, LOGGER, SETPOINT_STEP
 from .coordinator import ProOSConnectConfigEntry, ProOSConnectDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [Platform.FAN, Platform.SENSOR]
@@ -28,3 +29,22 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: ProOSConnectConfigEntry
+) -> bool:
+    """Migrate an old config entry."""
+    if entry.version > 1:
+        return False
+
+    if entry.minor_version < 2:
+        # Entries created before the minimum was detected used the setpoint step as minimum
+        hass.config_entries.async_update_entry(
+            entry,
+            data={**entry.data, CONF_MIN_SETPOINT: SETPOINT_STEP},
+            minor_version=2,
+        )
+        LOGGER.debug("Migrated config entry to version 1.2")
+
+    return True

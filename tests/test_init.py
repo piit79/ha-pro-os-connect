@@ -3,10 +3,19 @@
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from pro_os_connect import ProOSConnectTimeoutError
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.pro_os_connect.const import (
+    CONF_MAX_SETPOINT,
+    CONF_MIN_SETPOINT,
+    DOMAIN,
+)
+
+from .conftest import HOST, MAX_SETPOINT, SERIAL_NUMBER
 
 
 async def test_load_unload_config_entry(
@@ -47,3 +56,44 @@ async def test_config_entry_not_ready(
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+@pytest.mark.usefixtures("mock_pro_os_connect")
+async def test_migrate_entry_min_setpoint(hass: HomeAssistant) -> None:
+    """Test an entry without a minimum setpoint gets the setpoint step as minimum."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT},
+        unique_id=SERIAL_NUMBER,
+        version=1,
+        minor_version=1,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.minor_version == 2
+    assert entry.data == {
+        CONF_HOST: HOST,
+        CONF_MIN_SETPOINT: 10,
+        CONF_MAX_SETPOINT: MAX_SETPOINT,
+    }
+
+
+@pytest.mark.usefixtures("mock_pro_os_connect")
+async def test_migrate_entry_future_version(hass: HomeAssistant) -> None:
+    """Test an entry from a future version is not loaded."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT},
+        unique_id=SERIAL_NUMBER,
+        version=2,
+    )
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.MIGRATION_ERROR

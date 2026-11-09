@@ -7,6 +7,7 @@ DOMAIN = "pro_os_connect"
 LOGGER = logging.getLogger(__package__)
 
 CONF_MAX_SETPOINT = "max_setpoint"
+CONF_MIN_SETPOINT = "min_setpoint"
 
 SCAN_INTERVAL = timedelta(seconds=10)
 

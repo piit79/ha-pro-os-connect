@@ -1,7 +1,8 @@
 """Tests for the Pro OS Connect config flow."""
 
+from dataclasses import replace
 from ipaddress import ip_address
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, _Call, call
 
 from homeassistant.config_entries import SOURCE_USER, SOURCE_ZEROCONF
 from homeassistant.const import CONF_HOST
@@ -16,13 +17,24 @@ from pro_os_connect import (
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.pro_os_connect.const import CONF_MAX_SETPOINT, DOMAIN
+from custom_components.pro_os_connect.const import (
+    CONF_MAX_SETPOINT,
+    CONF_MIN_SETPOINT,
+    DOMAIN,
+)
 
-from .conftest import HOST, MAX_SETPOINT, SERIAL_NUMBER
+from .conftest import HOST, MAX_SETPOINT, MIN_SETPOINT, SERIAL_NUMBER
 
 pytestmark = pytest.mark.usefixtures("mock_setup_entry")
 
+MIN_SETPOINT_PROBE = 1
 MAX_SETPOINT_PROBE = 2**31 - 1
+
+ENTRY_DATA = {
+    CONF_HOST: HOST,
+    CONF_MIN_SETPOINT: MIN_SETPOINT,
+    CONF_MAX_SETPOINT: MAX_SETPOINT,
+}
 
 ZEROCONF_DISCOVERY = ZeroconfServiceInfo(
     ip_address=ip_address(HOST),
@@ -50,10 +62,11 @@ async def test_user_flow(hass: HomeAssistant, mock_pro_os_connect: MagicMock) ->
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == f"Pro OS Connect {SERIAL_NUMBER}"
-    assert result["data"] == {CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT}
+    assert result["data"] == ENTRY_DATA
     assert result["result"].unique_id == SERIAL_NUMBER
-    # The original setpoint is restored after probing the maximum
+    # The original setpoint is restored after probing the minimum and maximum
     assert mock_pro_os_connect.set_setpoint.mock_calls == [
+        call(MIN_SETPOINT_PROBE),
         call(MAX_SETPOINT_PROBE),
         call(200),
     ]
@@ -79,9 +92,10 @@ async def test_user_flow_running(
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == {CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT}
+    assert result["data"] == ENTRY_DATA
     assert result["result"].unique_id == SERIAL_NUMBER
     assert mock_pro_os_connect.set_setpoint.mock_calls == [
+        call(MIN_SETPOINT_PROBE),
         call(MAX_SETPOINT_PROBE),
         call(200),
     ]
@@ -160,17 +174,45 @@ async def test_user_flow_errors(
 
 
 @pytest.mark.parametrize(
-    ("side_effect", "reason"),
+    ("probed_setpoints", "error", "reason", "setpoint_calls"),
     [
-        pytest.param(ProOSConnectTimeoutError, "cannot_connect", id="timeout_error"),
-        pytest.param(Exception, "unknown", id="unknown"),
+        pytest.param(
+            [],
+            ProOSConnectTimeoutError,
+            "cannot_connect",
+            [call(MIN_SETPOINT_PROBE), call(200)],
+            id="min_timeout_error",
+        ),
+        pytest.param(
+            [],
+            None,
+            "cannot_connect",
+            [call(MIN_SETPOINT_PROBE), call(200)],
+            id="min_no_telemetry",
+        ),
+        pytest.param(
+            [MIN_SETPOINT],
+            ProOSConnectTimeoutError,
+            "cannot_connect",
+            [call(MIN_SETPOINT_PROBE), call(MAX_SETPOINT_PROBE), call(200)],
+            id="max_timeout_error",
+        ),
+        pytest.param(
+            [MIN_SETPOINT],
+            Exception,
+            "unknown",
+            [call(MIN_SETPOINT_PROBE), call(MAX_SETPOINT_PROBE), call(200)],
+            id="max_unknown",
+        ),
     ],
 )
-async def test_detect_max_setpoint_error(
+async def test_detect_setpoint_range_error(
     hass: HomeAssistant,
     mock_pro_os_connect: MagicMock,
-    side_effect: type[Exception],
+    probed_setpoints: list[int],
+    error: type[Exception] | None,
     reason: str,
+    setpoint_calls: list[_Call],
 ) -> None:
     """Test the flow aborts and restores the setpoint if probing fails."""
     result = await hass.config_entries.flow.async_init(
@@ -179,9 +221,11 @@ async def test_detect_max_setpoint_error(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_HOST: HOST}
     )
+    telemetry = mock_pro_os_connect.get_telemetry.return_value
     mock_pro_os_connect.get_telemetry.side_effect = [
-        mock_pro_os_connect.get_telemetry.return_value,
-        side_effect,
+        telemetry,
+        *(replace(telemetry, setpoint=setpoint) for setpoint in probed_setpoints),
+        error,
     ]
 
     result = await hass.config_entries.flow.async_configure(
@@ -190,13 +234,10 @@ async def test_detect_max_setpoint_error(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == reason
-    assert mock_pro_os_connect.set_setpoint.mock_calls == [
-        call(MAX_SETPOINT_PROBE),
-        call(200),
-    ]
+    assert mock_pro_os_connect.set_setpoint.mock_calls == setpoint_calls
 
 
-async def test_detect_max_setpoint_no_telemetry(
+async def test_detect_setpoint_range_no_telemetry(
     hass: HomeAssistant, mock_pro_os_connect: MagicMock
 ) -> None:
     """Test the flow aborts without changing the setpoint if telemetry is missing."""
@@ -217,19 +258,33 @@ async def test_detect_max_setpoint_no_telemetry(
     mock_pro_os_connect.set_setpoint.assert_not_called()
 
 
-@pytest.mark.parametrize("telemetry_overrides", [{"setpoint": 0}])
-async def test_detect_max_setpoint_invalid(
-    hass: HomeAssistant, mock_pro_os_connect: MagicMock
+@pytest.mark.parametrize(
+    ("min_setpoint", "max_setpoint"),
+    [
+        pytest.param(0, MAX_SETPOINT, id="min_zero"),
+        pytest.param(MAX_SETPOINT, MIN_SETPOINT, id="min_above_max"),
+    ],
+)
+async def test_detect_setpoint_range_invalid(
+    hass: HomeAssistant,
+    mock_pro_os_connect: MagicMock,
+    min_setpoint: int,
+    max_setpoint: int,
 ) -> None:
-    """Test the flow aborts if the device reports an invalid maximum setpoint."""
-    mock_pro_os_connect.set_setpoint.side_effect = None
-
+    """Test the flow aborts if the device reports an invalid setpoint range."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_HOST: HOST}
     )
+    telemetry = mock_pro_os_connect.get_telemetry.return_value
+    mock_pro_os_connect.get_telemetry.side_effect = [
+        telemetry,
+        replace(telemetry, setpoint=min_setpoint),
+        replace(telemetry, setpoint=max_setpoint),
+    ]
+
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={}
     )
@@ -278,7 +333,7 @@ async def test_zeroconf_flow(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == f"Pro OS Connect {SERIAL_NUMBER}"
-    assert result["data"] == {CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT}
+    assert result["data"] == ENTRY_DATA
     assert result["result"].unique_id == SERIAL_NUMBER
 
 
@@ -301,7 +356,7 @@ async def test_zeroconf_flow_running(
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == {CONF_HOST: HOST, CONF_MAX_SETPOINT: MAX_SETPOINT}
+    assert result["data"] == ENTRY_DATA
     assert result["result"].unique_id == SERIAL_NUMBER
 
 
