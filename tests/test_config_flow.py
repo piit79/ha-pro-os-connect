@@ -20,6 +20,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.pro_os_connect.const import (
     CONF_MAX_SETPOINT,
     CONF_MIN_SETPOINT,
+    CONF_SCAN_INTERVAL_IDLE,
+    CONF_SCAN_INTERVAL_RUNNING,
     DOMAIN,
 )
 
@@ -444,3 +446,25 @@ async def test_zeroconf_flow_not_pro_os_connect(hass: HomeAssistant) -> None:
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "not_pro_os_connect_device"
+
+
+async def test_options_flow(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Test configuring the polling intervals."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={CONF_SCAN_INTERVAL_IDLE: 30.0, CONF_SCAN_INTERVAL_RUNNING: 2.0},
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_config_entry.options == {
+        CONF_SCAN_INTERVAL_IDLE: 30,
+        CONF_SCAN_INTERVAL_RUNNING: 2,
+    }

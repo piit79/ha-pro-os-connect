@@ -71,5 +71,20 @@
         "invalid_response": {
             "message": "The Pro OS Connect device returned an invalid response."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Polling",
+                "data": {
+                    "scan_interval_idle": "Polling interval when idle",
+                    "scan_interval_running": "Polling interval when running"
+                },
+                "data_description": {
+                    "scan_interval_idle": "How often the extractor is polled while it is stopped.",
+                    "scan_interval_running": "How often the extractor is polled while it is running."
+                }
+            }
+        }
     }
 }

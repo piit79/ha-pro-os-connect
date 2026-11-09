@@ -3,9 +3,21 @@
 import time
 from typing import Any, override
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_HOST
-from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
+from homeassistant.const import CONF_HOST, UnitOfTime
+from homeassistant.core import callback
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+)
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from pro_os_connect import ProOSConnect, ProOSConnectError
 import probatio
@@ -14,6 +26,10 @@ from .const import (
     COMMAND_SETTLE_TIME,
     CONF_MAX_SETPOINT,
     CONF_MIN_SETPOINT,
+    CONF_SCAN_INTERVAL_IDLE,
+    CONF_SCAN_INTERVAL_RUNNING,
+    DEFAULT_SCAN_INTERVAL_IDLE,
+    DEFAULT_SCAN_INTERVAL_RUNNING,
     DOMAIN,
     LOGGER,
     ZEROCONF_HOSTNAME_PREFIX,
@@ -22,6 +38,16 @@ from .const import (
 # The device clamps a too low or too high setpoint to its minimum or maximum
 MIN_SETPOINT_PROBE = 1
 MAX_SETPOINT_PROBE = 2**31 - 1
+
+SCAN_INTERVAL_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        min=1,
+        max=300,
+        step=1,
+        mode=NumberSelectorMode.BOX,
+        unit_of_measurement=UnitOfTime.SECONDS,
+    )
+)
 
 
 class InvalidResponse(Exception):
@@ -77,6 +103,13 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
     _host: str
     _serial_number: str
+
+    @staticmethod
+    @callback
+    @override
+    def async_get_options_flow(config_entry: ConfigEntry) -> ProOSConnectOptionsFlow:
+        """Return the options flow."""
+        return ProOSConnectOptionsFlow()
 
     @override
     async def async_step_user(
@@ -195,4 +228,38 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_MIN_SETPOINT: min_setpoint,
                 CONF_MAX_SETPOINT: max_setpoint,
             },
+        )
+
+
+class ProOSConnectOptionsFlow(OptionsFlowWithReload):
+    """Handle the options of a Pro OS Connect config entry."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the polling intervals."""
+        if user_input is not None:
+            return self.async_create_entry(
+                data={key: int(value) for key, value in user_input.items()}
+            )
+
+        options = self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=probatio.Schema(
+                {
+                    probatio.Required(
+                        CONF_SCAN_INTERVAL_IDLE,
+                        default=options.get(
+                            CONF_SCAN_INTERVAL_IDLE, DEFAULT_SCAN_INTERVAL_IDLE
+                        ),
+                    ): SCAN_INTERVAL_SELECTOR,
+                    probatio.Required(
+                        CONF_SCAN_INTERVAL_RUNNING,
+                        default=options.get(
+                            CONF_SCAN_INTERVAL_RUNNING, DEFAULT_SCAN_INTERVAL_RUNNING
+                        ),
+                    ): SCAN_INTERVAL_SELECTOR,
+                }
+            ),
         )

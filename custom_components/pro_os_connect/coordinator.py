@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from datetime import timedelta
 from typing import override
 
 from homeassistant.config_entries import ConfigEntry
@@ -12,7 +13,15 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from pro_os_connect import ProOSConnect, ProOSConnectError
 from pro_os_connect.common import TelemetryFields
 
-from .const import COMMAND_SETTLE_TIME, DOMAIN, LOGGER, SCAN_INTERVAL
+from .const import (
+    COMMAND_SETTLE_TIME,
+    CONF_SCAN_INTERVAL_IDLE,
+    CONF_SCAN_INTERVAL_RUNNING,
+    DEFAULT_SCAN_INTERVAL_IDLE,
+    DEFAULT_SCAN_INTERVAL_RUNNING,
+    DOMAIN,
+    LOGGER,
+)
 
 type ProOSConnectConfigEntry = ConfigEntry[ProOSConnectDataUpdateCoordinator]
 
@@ -34,7 +43,11 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
             LOGGER,
             config_entry=entry,
             name=f"Pro OS Connect {entry.title}",
-            update_interval=SCAN_INTERVAL,
+            update_interval=timedelta(
+                seconds=entry.options.get(
+                    CONF_SCAN_INTERVAL_IDLE, DEFAULT_SCAN_INTERVAL_IDLE
+                )
+            ),
             # Refresh once all commands of a service call have settled
             request_refresh_debouncer=Debouncer(
                 hass, LOGGER, cooldown=COMMAND_SETTLE_TIME, immediate=False
@@ -79,4 +92,16 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
                 translation_domain=DOMAIN,
                 translation_key="invalid_response",
             )
+        self.update_interval = self._scan_interval(bool(telemetry.is_running))
         return telemetry
+
+    def _scan_interval(self, is_running: bool) -> timedelta:
+        """Return the polling interval for the running state of the extractor."""
+        options = self.config_entry.options
+        if is_running:
+            seconds = options.get(
+                CONF_SCAN_INTERVAL_RUNNING, DEFAULT_SCAN_INTERVAL_RUNNING
+            )
+        else:
+            seconds = options.get(CONF_SCAN_INTERVAL_IDLE, DEFAULT_SCAN_INTERVAL_IDLE)
+        return timedelta(seconds=seconds)

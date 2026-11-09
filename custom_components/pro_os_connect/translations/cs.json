@@ -71,5 +71,20 @@
         "invalid_response": {
             "message": "Zařízení Pro OS Connect vrátilo neplatnou odpověď."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Dotazování",
+                "data": {
+                    "scan_interval_idle": "Interval dotazování v klidu",
+                    "scan_interval_running": "Interval dotazování za chodu"
+                },
+                "data_description": {
+                    "scan_interval_idle": "Jak často se zjišťuje stav odsavače, když je vypnutý.",
+                    "scan_interval_running": "Jak často se zjišťuje stav odsavače, když běží."
+                }
+            }
+        }
     }
 }

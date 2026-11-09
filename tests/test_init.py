@@ -1,17 +1,25 @@
 """Tests for the Pro OS Connect integration setup."""
 
+from dataclasses import replace
+from datetime import timedelta
 from unittest.mock import MagicMock
 
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from pro_os_connect import ProOSConnectTimeoutError
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.pro_os_connect.const import (
     CONF_MAX_SETPOINT,
     CONF_MIN_SETPOINT,
+    CONF_SCAN_INTERVAL_IDLE,
+    CONF_SCAN_INTERVAL_RUNNING,
     DOMAIN,
 )
 
@@ -97,3 +105,45 @@ async def test_migrate_entry_future_version(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.MIGRATION_ERROR
+
+
+@pytest.mark.parametrize(
+    ("telemetry_overrides", "config_entry_options", "interval"),
+    [
+        pytest.param({"is_running": 0}, {}, 10, id="idle_default"),
+        pytest.param({"is_running": 1}, {}, 5, id="running_default"),
+        pytest.param(
+            {"is_running": 0},
+            {CONF_SCAN_INTERVAL_IDLE: 30, CONF_SCAN_INTERVAL_RUNNING: 2},
+            30,
+            id="idle_configured",
+        ),
+        pytest.param(
+            {"is_running": 1},
+            {CONF_SCAN_INTERVAL_IDLE: 30, CONF_SCAN_INTERVAL_RUNNING: 2},
+            2,
+            id="running_configured",
+        ),
+    ],
+)
+async def test_scan_interval(init_integration: MockConfigEntry, interval: int) -> None:
+    """Test the polling interval matches the running state of the extractor."""
+    assert init_integration.runtime_data.update_interval == timedelta(seconds=interval)
+
+
+async def test_scan_interval_follows_running_state(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_pro_os_connect: MagicMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test the polling slows down once the extractor stops."""
+    mock_pro_os_connect.get_telemetry.return_value = replace(
+        mock_pro_os_connect.get_telemetry.return_value, is_running=0
+    )
+
+    freezer.tick(timedelta(seconds=5))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    assert init_integration.runtime_data.update_interval == timedelta(seconds=10)

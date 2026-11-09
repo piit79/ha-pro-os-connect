@@ -40,7 +40,13 @@ def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
 
 
 @pytest.fixture
-def mock_config_entry() -> MockConfigEntry:
+def config_entry_options() -> dict[str, int]:
+    """Return the options of the mocked config entry."""
+    return {}
+
+
+@pytest.fixture
+def mock_config_entry(config_entry_options: dict[str, int]) -> MockConfigEntry:
     """Return the default mocked config entry."""
     return MockConfigEntry(
         title=f"Pro OS Connect {SERIAL_NUMBER}",
@@ -50,6 +56,7 @@ def mock_config_entry() -> MockConfigEntry:
             CONF_MIN_SETPOINT: MIN_SETPOINT,
             CONF_MAX_SETPOINT: MAX_SETPOINT,
         },
+        options=config_entry_options,
         unique_id=SERIAL_NUMBER,
         minor_version=2,
     )
