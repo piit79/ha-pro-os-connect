@@ -38,11 +38,20 @@
             "combined_blockage": {
                 "name": "Celkové zanesení filtrů"
             },
+            "combined_pressure": {
+                "name": "Celkový tlak filtrů"
+            },
             "flow_rate": {
                 "name": "Průtok"
             },
+            "inlet_pressure": {
+                "name": "Tlak na vstupu"
+            },
             "pre_blockage": {
                 "name": "Zanesení předfiltru"
+            },
+            "pre_pressure": {
+                "name": "Tlak předfiltru"
             },
             "pump_level": {
                 "name": "Výkon čerpadla"

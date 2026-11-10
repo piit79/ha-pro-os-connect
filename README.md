@@ -5,7 +5,7 @@ Home Assistant custom integration for Donaldson BOFA fume extractors with a Pro 
 It polls the controller over the local network every 10 seconds, or every 5 seconds while the extractor is running (both [configurable](#configuration)), and provides:
 
 - **Fan**: turn the extractor on and off, and set the flow rate in steps of 10 m³/h between the device's minimum and maximum setpoint. Setting the speed to 0 sets the minimum setpoint and stops the extractor.
-- **Sensors**: flow rate, target flow rate, filter blockage levels, pump level, active alarms and uptime.
+- **Sensors**: flow rate, target flow rate, filter blockage levels, filter pressures (disabled by default), pump level, active alarms and uptime.
 
 Devices are discovered automatically using zeroconf, or can be added manually by host name or IP address.
 

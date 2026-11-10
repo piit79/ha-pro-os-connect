@@ -38,11 +38,20 @@
             "combined_blockage": {
                 "name": "Combined filter blockage"
             },
+            "combined_pressure": {
+                "name": "Combined filter pressure"
+            },
             "flow_rate": {
                 "name": "Flow rate"
             },
+            "inlet_pressure": {
+                "name": "Inlet pressure"
+            },
             "pre_blockage": {
                 "name": "Pre-filter blockage"
+            },
+            "pre_pressure": {
+                "name": "Pre-filter pressure"
             },
             "pump_level": {
                 "name": "Pump level"

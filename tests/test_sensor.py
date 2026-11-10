@@ -26,7 +26,7 @@ def platforms() -> list[Platform]:
 
 
 @pytest.mark.freeze_time("2026-10-21 12:00:00+00:00")
-@pytest.mark.usefixtures("init_integration")
+@pytest.mark.usefixtures("entity_registry_enabled_by_default", "init_integration")
 async def test_entities(
     hass: HomeAssistant,
     entity_registry: er.EntityRegistry,
@@ -35,6 +35,24 @@ async def test_entities(
 ) -> None:
     """Test the sensor entities."""
     await snapshot_platform(hass, entity_registry, snapshot, mock_config_entry.entry_id)
+
+
+@pytest.mark.parametrize(
+    "entity_id",
+    [
+        "sensor.pro_os_connect_2511000618_combined_filter_pressure",
+        "sensor.pro_os_connect_2511000618_pre_filter_pressure",
+        "sensor.pro_os_connect_2511000618_inlet_pressure",
+    ],
+)
+@pytest.mark.usefixtures("init_integration")
+async def test_disabled_by_default(
+    entity_registry: er.EntityRegistry, entity_id: str
+) -> None:
+    """Test the pressure sensors are disabled by default."""
+    entry = entity_registry.async_get(entity_id)
+    assert entry
+    assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
 
 
 @pytest.mark.parametrize("telemetry_overrides", [{"is_running": 0}])

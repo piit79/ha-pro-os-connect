@@ -11,7 +11,12 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfRatio, UnitOfVolumeFlowRate
+from homeassistant.const import (
+    EntityCategory,
+    UnitOfPressure,
+    UnitOfRatio,
+    UnitOfVolumeFlowRate,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util.dt import utcnow
@@ -95,6 +100,39 @@ SENSORS: tuple[ProOSConnectSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfRatio.PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: data.real_inlet_blockage,
+    ),
+    ProOSConnectSensorEntityDescription(
+        key="combined_pressure",
+        translation_key="combined_pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        native_unit_of_measurement=UnitOfPressure.PA,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: data.combined_pressure,
+    ),
+    ProOSConnectSensorEntityDescription(
+        key="pre_pressure",
+        translation_key="pre_pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        native_unit_of_measurement=UnitOfPressure.PA,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: data.pre_pressure,
+    ),
+    ProOSConnectSensorEntityDescription(
+        key="inlet_pressure",
+        translation_key="inlet_pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        native_unit_of_measurement=UnitOfPressure.PA,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: data.inlet_pressure,
     ),
     ProOSConnectSensorEntityDescription(
         key="alarms",
