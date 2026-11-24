@@ -10,6 +10,6 @@
   "issue_tracker": "https://github.com/piit79/ha-pro-os-connect/issues",
   "loggers": ["pro_os_connect"],
   "requirements": ["pro_os_connect_py==1.0.0"],
-  "version": "1.0.0",
+  "version": "1.1.0",
   "zeroconf": ["_iq2._tcp.local."]
 }

@@ -18,14 +18,22 @@
             },
             "user": {
                 "data": {
-                    "host": "Host"
+                    "host": "Host",
+                    "exclusive_access": "Exclusive access"
                 },
                 "data_description": {
-                    "host": "The hostname or IP address of your Pro OS Connect controller."
+                    "host": "The hostname or IP address of your Pro OS Connect controller.",
+                    "exclusive_access": "Keep the connection to the device open. The device accepts only one connection at a time, so turn this off to let other clients access it between polls."
                 },
                 "description": "Set up your Donaldson BOFA fume extractor with a Pro OS Connect controller."
             },
             "zeroconf_confirm": {
+                "data": {
+                    "exclusive_access": "Exclusive access"
+                },
+                "data_description": {
+                    "exclusive_access": "Keep the connection to the device open. The device accepts only one connection at a time, so turn this off to let other clients access it between polls."
+                },
                 "description": "Do you want to set up the Pro OS Connect controller with serial number {serial_number} at {host}?"
             }
         }
@@ -81,14 +89,16 @@
     "options": {
         "step": {
             "init": {
-                "title": "Polling",
+                "title": "Options",
                 "data": {
                     "scan_interval_idle": "Polling interval when idle",
-                    "scan_interval_running": "Polling interval when running"
+                    "scan_interval_running": "Polling interval when running",
+                    "exclusive_access": "Exclusive access"
                 },
                 "data_description": {
                     "scan_interval_idle": "How often the extractor is polled while it is stopped.",
-                    "scan_interval_running": "How often the extractor is polled while it is running."
+                    "scan_interval_running": "How often the extractor is polled while it is running.",
+                    "exclusive_access": "Keep the connection to the device open. The device accepts only one connection at a time, so turn this off to let other clients access it between polls."
                 }
             }
         }

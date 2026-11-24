@@ -18,6 +18,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.pro_os_connect.const import (
+    CONF_EXCLUSIVE_ACCESS,
     CONF_MAX_SETPOINT,
     CONF_MIN_SETPOINT,
     CONF_SCAN_INTERVAL_IDLE,
@@ -50,7 +51,19 @@ ZEROCONF_DISCOVERY = ZeroconfServiceInfo(
 
 
 @pytest.mark.parametrize("telemetry_overrides", [{"is_running": False}])
-async def test_user_flow(hass: HomeAssistant, mock_pro_os_connect: MagicMock) -> None:
+@pytest.mark.parametrize(
+    ("user_input", "exclusive_access"),
+    [
+        pytest.param({}, True, id="default"),
+        pytest.param({CONF_EXCLUSIVE_ACCESS: False}, False, id="shared"),
+    ],
+)
+async def test_user_flow(
+    hass: HomeAssistant,
+    mock_pro_os_connect: MagicMock,
+    user_input: dict[str, bool],
+    exclusive_access: bool,
+) -> None:
     """Test the full user configuration flow."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
@@ -59,12 +72,13 @@ async def test_user_flow(hass: HomeAssistant, mock_pro_os_connect: MagicMock) ->
     assert result["step_id"] == "user"
 
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={CONF_HOST: HOST}
+        result["flow_id"], user_input={CONF_HOST: HOST, **user_input}
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == f"Pro OS Connect {SERIAL_NUMBER}"
     assert result["data"] == ENTRY_DATA
+    assert result["options"] == {CONF_EXCLUSIVE_ACCESS: exclusive_access}
     assert result["result"].unique_id == SERIAL_NUMBER
     # The original setpoint is restored after probing the minimum and maximum
     assert mock_pro_os_connect.set_setpoint.mock_calls == [
@@ -292,8 +306,16 @@ async def test_user_flow_already_configured(
 
 
 @pytest.mark.parametrize("telemetry_overrides", [{"is_running": False}])
+@pytest.mark.parametrize(
+    ("user_input", "exclusive_access"),
+    [
+        pytest.param({}, True, id="default"),
+        pytest.param({CONF_EXCLUSIVE_ACCESS: False}, False, id="shared"),
+    ],
+)
+@pytest.mark.usefixtures("mock_pro_os_connect")
 async def test_zeroconf_flow(
-    hass: HomeAssistant, mock_pro_os_connect: MagicMock
+    hass: HomeAssistant, user_input: dict[str, bool], exclusive_access: bool
 ) -> None:
     """Test the zeroconf discovery flow."""
     result = await hass.config_entries.flow.async_init(
@@ -307,12 +329,13 @@ async def test_zeroconf_flow(
     }
 
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={}
+        result["flow_id"], user_input=user_input
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == f"Pro OS Connect {SERIAL_NUMBER}"
     assert result["data"] == ENTRY_DATA
+    assert result["options"] == {CONF_EXCLUSIVE_ACCESS: exclusive_access}
     assert result["result"].unique_id == SERIAL_NUMBER
 
 
@@ -428,7 +451,7 @@ async def test_zeroconf_flow_not_pro_os_connect(hass: HomeAssistant) -> None:
 async def test_options_flow(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> None:
-    """Test configuring the polling intervals."""
+    """Test configuring the polling intervals and connection mode."""
     mock_config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
@@ -437,11 +460,16 @@ async def test_options_flow(
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={CONF_SCAN_INTERVAL_IDLE: 30.0, CONF_SCAN_INTERVAL_RUNNING: 2.0},
+        user_input={
+            CONF_SCAN_INTERVAL_IDLE: 30.0,
+            CONF_SCAN_INTERVAL_RUNNING: 2.0,
+            CONF_EXCLUSIVE_ACCESS: False,
+        },
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert mock_config_entry.options == {
         CONF_SCAN_INTERVAL_IDLE: 30,
         CONF_SCAN_INTERVAL_RUNNING: 2,
+        CONF_EXCLUSIVE_ACCESS: False,
     }

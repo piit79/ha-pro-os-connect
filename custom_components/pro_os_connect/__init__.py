@@ -4,7 +4,13 @@ from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
 from pro_os_connect import ProOSConnect
 
-from .const import CONF_MIN_SETPOINT, LOGGER, SETPOINT_STEP
+from .const import (
+    CONF_EXCLUSIVE_ACCESS,
+    CONF_MIN_SETPOINT,
+    DEFAULT_EXCLUSIVE_ACCESS,
+    LOGGER,
+    SETPOINT_STEP,
+)
 from .coordinator import ProOSConnectConfigEntry, ProOSConnectDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [Platform.FAN, Platform.SENSOR]
@@ -14,9 +20,16 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ProOSConnectConfigEntry
 ) -> bool:
     """Set up Pro OS Connect from a config entry."""
-    client = ProOSConnect(entry.data[CONF_HOST], keep_connection=False)
+    # Without exclusive access, other clients can connect to the device between requests
+    client = ProOSConnect(
+        entry.data[CONF_HOST],
+        keep_connection=entry.options.get(
+            CONF_EXCLUSIVE_ACCESS, DEFAULT_EXCLUSIVE_ACCESS
+        ),
+    )
     coordinator = ProOSConnectDataUpdateCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
+    entry.async_on_unload(client.disconnect)
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

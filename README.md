@@ -27,11 +27,14 @@ Copy `custom_components/pro_os_connect` into the `custom_components` folder of y
 
 ## Configuration
 
-Go to **Settings** > **Devices & services** and add the **Pro OS Connect** integration, or confirm the discovered device.
+Go to **Settings** > **Devices & services** and add the **Pro OS Connect** integration, or confirm the discovered device. You can choose whether the integration gets exclusive access to the device (see below).
 
 During setup, the integration briefly sets the extractor to its lowest and then its highest setpoint to detect the minimum and maximum flow rate, then restores the original setpoint. If the extractor is running, you are asked to confirm this first.
 
-To change the polling intervals after setup, select **Configure** on the integration entry. The intervals for an idle and a running extractor can be set separately, between 1 and 300 seconds.
+To change the options later, select **Configure** on the integration entry:
+
+- **Polling intervals**: the intervals for an idle and a running extractor can be set separately, between 1 and 300 seconds.
+- **Exclusive access** (on by default): keeps the connection to the device open between polls. The device accepts only one connection at a time, so turn this off to let other clients connect to it between polls. The integration then opens a new connection for every poll and command.
 
 ## Requirements
 

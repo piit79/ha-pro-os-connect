@@ -12,6 +12,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_HOST, UnitOfTime
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -24,10 +25,12 @@ import probatio
 
 from .const import (
     COMMAND_SETTLE_TIME,
+    CONF_EXCLUSIVE_ACCESS,
     CONF_MAX_SETPOINT,
     CONF_MIN_SETPOINT,
     CONF_SCAN_INTERVAL_IDLE,
     CONF_SCAN_INTERVAL_RUNNING,
+    DEFAULT_EXCLUSIVE_ACCESS,
     DEFAULT_SCAN_INTERVAL_IDLE,
     DEFAULT_SCAN_INTERVAL_RUNNING,
     DOMAIN,
@@ -95,6 +98,7 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
 
     _host: str
     _serial_number: str
+    _exclusive_access: bool
 
     @staticmethod
     @callback
@@ -126,6 +130,7 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured(updates={CONF_HOST: host})
                 self._host = host
                 self._serial_number = serial_number
+                self._exclusive_access = user_input[CONF_EXCLUSIVE_ACCESS]
                 if is_running:
                     return await self.async_step_confirm_running()
                 return await self._async_create_entry()
@@ -139,6 +144,12 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                     probatio.Required(
                         CONF_HOST, default=user_input.get(CONF_HOST)
                     ): TextSelector(TextSelectorConfig(autocomplete="off")),
+                    probatio.Required(
+                        CONF_EXCLUSIVE_ACCESS,
+                        default=user_input.get(
+                            CONF_EXCLUSIVE_ACCESS, DEFAULT_EXCLUSIVE_ACCESS
+                        ),
+                    ): BooleanSelector(),
                 }
             ),
             errors=errors,
@@ -180,12 +191,25 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
+                self._exclusive_access = user_input[CONF_EXCLUSIVE_ACCESS]
                 if is_running:
                     return await self.async_step_confirm_running()
                 return await self._async_create_entry()
+        else:
+            user_input = {}
 
         return self.async_show_form(
             step_id="zeroconf_confirm",
+            data_schema=probatio.Schema(
+                {
+                    probatio.Required(
+                        CONF_EXCLUSIVE_ACCESS,
+                        default=user_input.get(
+                            CONF_EXCLUSIVE_ACCESS, DEFAULT_EXCLUSIVE_ACCESS
+                        ),
+                    ): BooleanSelector(),
+                }
+            ),
             description_placeholders={
                 "serial_number": self._serial_number,
                 "host": self._host,
@@ -220,6 +244,7 @@ class ProOSConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_MIN_SETPOINT: min_setpoint,
                 CONF_MAX_SETPOINT: max_setpoint,
             },
+            options={CONF_EXCLUSIVE_ACCESS: self._exclusive_access},
         )
 
 
@@ -229,10 +254,16 @@ class ProOSConnectOptionsFlow(OptionsFlowWithReload):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Manage the polling intervals."""
+        """Manage the polling intervals and connection mode."""
         if user_input is not None:
             return self.async_create_entry(
-                data={key: int(value) for key, value in user_input.items()}
+                data={
+                    CONF_SCAN_INTERVAL_IDLE: int(user_input[CONF_SCAN_INTERVAL_IDLE]),
+                    CONF_SCAN_INTERVAL_RUNNING: int(
+                        user_input[CONF_SCAN_INTERVAL_RUNNING]
+                    ),
+                    CONF_EXCLUSIVE_ACCESS: user_input[CONF_EXCLUSIVE_ACCESS],
+                }
             )
 
         options = self.config_entry.options
@@ -252,6 +283,12 @@ class ProOSConnectOptionsFlow(OptionsFlowWithReload):
                             CONF_SCAN_INTERVAL_RUNNING, DEFAULT_SCAN_INTERVAL_RUNNING
                         ),
                     ): SCAN_INTERVAL_SELECTOR,
+                    probatio.Required(
+                        CONF_EXCLUSIVE_ACCESS,
+                        default=options.get(
+                            CONF_EXCLUSIVE_ACCESS, DEFAULT_EXCLUSIVE_ACCESS
+                        ),
+                    ): BooleanSelector(),
                 }
             ),
         )

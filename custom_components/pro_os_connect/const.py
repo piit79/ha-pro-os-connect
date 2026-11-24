@@ -5,11 +5,14 @@ import logging
 DOMAIN = "pro_os_connect"
 LOGGER = logging.getLogger(__package__)
 
+CONF_EXCLUSIVE_ACCESS = "exclusive_access"
 CONF_MAX_SETPOINT = "max_setpoint"
 CONF_MIN_SETPOINT = "min_setpoint"
 
 CONF_SCAN_INTERVAL_IDLE = "scan_interval_idle"
 CONF_SCAN_INTERVAL_RUNNING = "scan_interval_running"
+
+DEFAULT_EXCLUSIVE_ACCESS = True
 
 # Polling intervals in seconds
 DEFAULT_SCAN_INTERVAL_IDLE = 10

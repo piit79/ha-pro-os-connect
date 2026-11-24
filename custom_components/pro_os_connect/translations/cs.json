@@ -18,14 +18,22 @@
             },
             "user": {
                 "data": {
-                    "host": "Hostitel"
+                    "host": "Hostitel",
+                    "exclusive_access": "Výhradní přístup"
                 },
                 "data_description": {
-                    "host": "Název hostitele nebo IP adresa vaší řídicí jednotky Pro OS Connect."
+                    "host": "Název hostitele nebo IP adresa vaší řídicí jednotky Pro OS Connect.",
+                    "exclusive_access": "Udržovat spojení se zařízením otevřené. Zařízení přijímá vždy jen jedno spojení, takže tuto volbu vypněte, aby k němu mezi dotazy mohli přistupovat i jiní klienti."
                 },
                 "description": "Nastavte svůj odsavač Donaldson BOFA s řídicí jednotkou Pro OS Connect."
             },
             "zeroconf_confirm": {
+                "data": {
+                    "exclusive_access": "Výhradní přístup"
+                },
+                "data_description": {
+                    "exclusive_access": "Udržovat spojení se zařízením otevřené. Zařízení přijímá vždy jen jedno spojení, takže tuto volbu vypněte, aby k němu mezi dotazy mohli přistupovat i jiní klienti."
+                },
                 "description": "Chcete nastavit řídicí jednotku Pro OS Connect se sériovým číslem {serial_number} na adrese {host}?"
             }
         }
@@ -81,14 +89,16 @@
     "options": {
         "step": {
             "init": {
-                "title": "Dotazování",
+                "title": "Možnosti",
                 "data": {
                     "scan_interval_idle": "Interval dotazování v klidu",
-                    "scan_interval_running": "Interval dotazování za chodu"
+                    "scan_interval_running": "Interval dotazování za chodu",
+                    "exclusive_access": "Výhradní přístup"
                 },
                 "data_description": {
                     "scan_interval_idle": "Jak často se zjišťuje stav odsavače, když je vypnutý.",
-                    "scan_interval_running": "Jak často se zjišťuje stav odsavače, když běží."
+                    "scan_interval_running": "Jak často se zjišťuje stav odsavače, když běží.",
+                    "exclusive_access": "Udržovat spojení se zařízením otevřené. Zařízení přijímá vždy jen jedno spojení, takže tuto volbu vypněte, aby k němu mezi dotazy mohli přistupovat i jiní klienti."
                 }
             }
         }

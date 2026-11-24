@@ -16,6 +16,7 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.pro_os_connect.const import (
+    CONF_EXCLUSIVE_ACCESS,
     CONF_MAX_SETPOINT,
     CONF_MIN_SETPOINT,
     CONF_SCAN_INTERVAL_IDLE,
@@ -26,20 +27,32 @@ from custom_components.pro_os_connect.const import (
 from .conftest import HOST, MAX_SETPOINT, SERIAL_NUMBER
 
 
+@pytest.mark.parametrize(
+    ("config_entry_options", "keep_connection"),
+    [
+        pytest.param({}, True, id="default"),
+        pytest.param({CONF_EXCLUSIVE_ACCESS: True}, True, id="exclusive"),
+        pytest.param({CONF_EXCLUSIVE_ACCESS: False}, False, id="shared"),
+    ],
+)
 async def test_load_unload_config_entry(
     hass: HomeAssistant,
     init_integration: MockConfigEntry,
     mock_pro_os_connect_class: MagicMock,
+    mock_pro_os_connect: MagicMock,
+    keep_connection: bool,
 ) -> None:
     """Test loading and unloading the config entry."""
     assert init_integration.state is ConfigEntryState.LOADED
-    # Other clients can connect to the device between requests
-    mock_pro_os_connect_class.assert_called_once_with(HOST, keep_connection=False)
+    mock_pro_os_connect_class.assert_called_once_with(
+        HOST, keep_connection=keep_connection
+    )
 
     await hass.config_entries.async_unload(init_integration.entry_id)
     await hass.async_block_till_done()
 
     assert init_integration.state is ConfigEntryState.NOT_LOADED
+    mock_pro_os_connect.disconnect.assert_called_once()
 
 
 async def test_config_entry_not_ready(
