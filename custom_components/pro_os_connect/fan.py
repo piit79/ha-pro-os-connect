@@ -1,5 +1,6 @@
 """Fan platform for the Pro OS Connect integration."""
 
+from functools import partial
 import math
 from typing import Any, override
 
@@ -54,7 +55,7 @@ class ProOSConnectFanEntity(ProOSConnectEntity, FanEntity):
     @override
     def is_on(self) -> bool:
         """Return true if the extractor is running."""
-        return bool(self.coordinator.data.is_running)
+        return self.coordinator.data.is_running
 
     @property
     @override
@@ -84,7 +85,9 @@ class ProOSConnectFanEntity(ProOSConnectEntity, FanEntity):
             setpoint = min(
                 self._min_setpoint + (speed - 1) * SETPOINT_STEP, self._max_setpoint
             )
-            await self.coordinator.async_send_command(client.set_setpoint, setpoint)
+            await self.coordinator.async_send_command(
+                partial(client.set_setpoint, setpoint, read_back=False)
+            )
         await self.coordinator.async_send_command(client.pump_start)
 
     @override
@@ -101,6 +104,6 @@ class ProOSConnectFanEntity(ProOSConnectEntity, FanEntity):
         """Set the minimum setpoint and stop the extractor."""
         client = self.coordinator.client
         await self.coordinator.async_send_command(
-            client.set_setpoint, self._min_setpoint
+            partial(client.set_setpoint, self._min_setpoint, read_back=False)
         )
         await self.coordinator.async_send_command(client.pump_stop)

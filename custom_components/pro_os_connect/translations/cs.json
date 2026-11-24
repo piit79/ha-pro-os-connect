@@ -76,9 +76,6 @@
     "exceptions": {
         "communication_error": {
             "message": "Při komunikaci se zařízením Pro OS Connect došlo k chybě: {error}"
-        },
-        "invalid_response": {
-            "message": "Zařízení Pro OS Connect vrátilo neplatnou odpověď."
         }
     },
     "options": {

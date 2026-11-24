@@ -10,8 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pro_os_connect import ProOSConnect, ProOSConnectError
-from pro_os_connect.common import TelemetryFields
+from pro_os_connect import ProOSConnect, ProOSConnectError, TelemetryFields
 
 from .const import (
     COMMAND_SETTLE_TIME,
@@ -54,7 +53,7 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
             ),
         )
         self.client = client
-        # The client shares a single socket, so calls must not overlap
+        # The client is not thread-safe, so calls must not overlap
         self._lock = asyncio.Lock()
 
     async def async_execute[*Ts, T](self, func: Callable[[*Ts], T], *args: *Ts) -> T:
@@ -87,12 +86,7 @@ class ProOSConnectDataUpdateCoordinator(DataUpdateCoordinator[TelemetryFields]):
                 translation_key="communication_error",
                 translation_placeholders={"error": str(err)},
             ) from err
-        if telemetry is None:
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="invalid_response",
-            )
-        self.update_interval = self._scan_interval(bool(telemetry.is_running))
+        self.update_interval = self._scan_interval(telemetry.is_running)
         return telemetry
 
     def _scan_interval(self, is_running: bool) -> timedelta:

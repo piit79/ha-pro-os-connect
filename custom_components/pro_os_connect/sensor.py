@@ -20,7 +20,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util.dt import utcnow
-from pro_os_connect.common import TelemetryFields
+from pro_os_connect import TelemetryFields
 
 from .coordinator import ProOSConnectConfigEntry, ProOSConnectDataUpdateCoordinator
 from .entity import ProOSConnectEntity

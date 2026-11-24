@@ -56,40 +56,32 @@ class InvalidResponse(Exception):
 
 def _get_device_info(host: str) -> tuple[str, bool]:
     """Return the serial number and running state of the device."""
-    client = ProOSConnect(host)
-    try:
-        protocol_version = client.get_protocol_version()
+    client = ProOSConnect(host, keep_connection=False)
+    with client.hold_connection():
+        client.get_protocol_version()
         serial_number = client.get_serial_number()
         telemetry = client.get_telemetry()
-    finally:
-        client.disconnect()
-    if protocol_version is None or not serial_number or telemetry is None:
+    if not serial_number:
         raise InvalidResponse
-    return serial_number, bool(telemetry.is_running)
+    return serial_number, telemetry.is_running
 
 
 def _probe_setpoint(client: ProOSConnect, setpoint: int) -> int:
     """Set a setpoint and return the one the device applied."""
-    client.set_setpoint(setpoint)
+    client.set_setpoint(setpoint, read_back=False)
     time.sleep(COMMAND_SETTLE_TIME)
-    if (telemetry := client.get_telemetry()) is None:
-        raise InvalidResponse
-    return telemetry.setpoint
+    return client.get_telemetry().setpoint
 
 
 def _detect_setpoint_range(host: str) -> tuple[int, int]:
     """Detect the minimum and maximum setpoint, restoring the current one."""
-    client = ProOSConnect(host)
+    client = ProOSConnect(host, keep_connection=False)
+    original_setpoint = client.get_telemetry().setpoint
     try:
-        if (telemetry := client.get_telemetry()) is None:
-            raise InvalidResponse
-        try:
-            min_setpoint = _probe_setpoint(client, MIN_SETPOINT_PROBE)
-            max_setpoint = _probe_setpoint(client, MAX_SETPOINT_PROBE)
-        finally:
-            client.set_setpoint(telemetry.setpoint)
+        min_setpoint = _probe_setpoint(client, MIN_SETPOINT_PROBE)
+        max_setpoint = _probe_setpoint(client, MAX_SETPOINT_PROBE)
     finally:
-        client.disconnect()
+        client.set_setpoint(original_setpoint, read_back=False)
     if not 0 < min_setpoint <= max_setpoint:
         raise InvalidResponse
     return min_setpoint, max_setpoint

@@ -55,7 +55,7 @@ async def test_disabled_by_default(
     assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
 
 
-@pytest.mark.parametrize("telemetry_overrides", [{"is_running": 0}])
+@pytest.mark.parametrize("telemetry_overrides", [{"is_running": False}])
 @pytest.mark.usefixtures("init_integration")
 async def test_flow_rate_not_running(hass: HomeAssistant) -> None:
     """Test the flow rate is reported as zero when the extractor is stopped."""

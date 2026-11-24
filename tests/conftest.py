@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
-from pro_os_connect.common import TelemetryFields
+from pro_os_connect import TelemetryFields
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -87,10 +87,8 @@ def telemetry_overrides() -> dict[str, int | float]:
 
 
 @pytest.fixture
-def mock_pro_os_connect(
-    telemetry_overrides: dict[str, int | float],
-) -> Generator[MagicMock]:
-    """Return a mocked Pro OS Connect client."""
+def mock_pro_os_connect_class() -> Generator[MagicMock]:
+    """Return the mocked Pro OS Connect client class."""
     with (
         patch(
             "custom_components.pro_os_connect.ProOSConnect", autospec=True
@@ -100,25 +98,34 @@ def mock_pro_os_connect(
             new=client_mock,
         ),
     ):
-        client = client_mock.return_value
-        client.get_protocol_version.return_value = 1
-        client.get_serial_number.return_value = SERIAL_NUMBER
-        client.get_telemetry.return_value = TelemetryFields(
-            **(load_json_object_fixture("telemetry.json") | telemetry_overrides)
+        yield client_mock
+
+
+@pytest.fixture
+def mock_pro_os_connect(
+    mock_pro_os_connect_class: MagicMock,
+    telemetry_overrides: dict[str, int | float],
+) -> MagicMock:
+    """Return a mocked Pro OS Connect client."""
+    client = mock_pro_os_connect_class.return_value
+    client.get_protocol_version.return_value = 1
+    client.get_serial_number.return_value = SERIAL_NUMBER
+    client.get_telemetry.return_value = TelemetryFields(
+        **(load_json_object_fixture("telemetry.json") | telemetry_overrides)
+    )
+
+    def _set_setpoint(setpoint: int, read_back: bool = True) -> int | None:
+        # The device clamps the setpoint to its range
+        telemetry = replace(
+            client.get_telemetry.return_value,
+            setpoint=min(max(setpoint, MIN_SETPOINT), MAX_SETPOINT),
         )
+        client.get_telemetry.return_value = telemetry
+        return telemetry.setpoint if read_back else None
 
-        def _set_setpoint(setpoint: int) -> bool:
-            # The device clamps the setpoint to its range
-            client.get_telemetry.return_value = replace(
-                client.get_telemetry.return_value,
-                setpoint=min(max(setpoint, MIN_SETPOINT), MAX_SETPOINT),
-            )
-            return True
-
-        client.set_setpoint.side_effect = _set_setpoint
-        client.pump_start.return_value = True
-        client.pump_stop.return_value = True
-        yield client
+    client.set_setpoint.side_effect = _set_setpoint
+    client.hold_connection.return_value.__enter__.return_value = client
+    return client
 
 
 @pytest.fixture

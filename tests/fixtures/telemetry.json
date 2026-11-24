@@ -12,5 +12,5 @@
   "real_inlet_blockage": 3,
   "compensated_combined_blockage": 21,
   "compensated_pre_blockage": 38,
-  "is_running": 1
+  "is_running": true
 }

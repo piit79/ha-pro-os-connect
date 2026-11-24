@@ -49,7 +49,7 @@ ZEROCONF_DISCOVERY = ZeroconfServiceInfo(
 )
 
 
-@pytest.mark.parametrize("telemetry_overrides", [{"is_running": 0}])
+@pytest.mark.parametrize("telemetry_overrides", [{"is_running": False}])
 async def test_user_flow(hass: HomeAssistant, mock_pro_os_connect: MagicMock) -> None:
     """Test the full user configuration flow."""
     result = await hass.config_entries.flow.async_init(
@@ -68,9 +68,9 @@ async def test_user_flow(hass: HomeAssistant, mock_pro_os_connect: MagicMock) ->
     assert result["result"].unique_id == SERIAL_NUMBER
     # The original setpoint is restored after probing the minimum and maximum
     assert mock_pro_os_connect.set_setpoint.mock_calls == [
-        call(MIN_SETPOINT_PROBE),
-        call(MAX_SETPOINT_PROBE),
-        call(200),
+        call(MIN_SETPOINT_PROBE, read_back=False),
+        call(MAX_SETPOINT_PROBE, read_back=False),
+        call(200, read_back=False),
     ]
 
 
@@ -97,9 +97,9 @@ async def test_user_flow_running(
     assert result["data"] == ENTRY_DATA
     assert result["result"].unique_id == SERIAL_NUMBER
     assert mock_pro_os_connect.set_setpoint.mock_calls == [
-        call(MIN_SETPOINT_PROBE),
-        call(MAX_SETPOINT_PROBE),
-        call(200),
+        call(MIN_SETPOINT_PROBE, read_back=False),
+        call(MAX_SETPOINT_PROBE, read_back=False),
+        call(200, read_back=False),
     ]
 
 
@@ -127,16 +127,13 @@ async def test_user_flow_running(
             "cannot_connect",
             id="response_error",
         ),
-        pytest.param(
-            "get_protocol_version", None, None, "cannot_connect", id="no_protocol"
-        ),
         pytest.param("get_serial_number", None, "", "cannot_connect", id="no_serial"),
-        pytest.param("get_telemetry", None, None, "cannot_connect", id="no_telemetry"),
         pytest.param("get_protocol_version", Exception, None, "unknown", id="unknown"),
     ],
 )
 async def test_user_flow_errors(
     hass: HomeAssistant,
+    mock_pro_os_connect_class: MagicMock,
     mock_pro_os_connect: MagicMock,
     method: str,
     side_effect: type[Exception] | None,
@@ -158,8 +155,8 @@ async def test_user_flow_errors(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": error}
-    # The connection is closed even if a request failed
-    mock_pro_os_connect.disconnect.assert_called_once()
+    # The client disconnects after each request, even if it failed
+    mock_pro_os_connect_class.assert_called_once_with(HOST, keep_connection=False)
 
     mock_method.side_effect = None
     mock_method.return_value = original_return_value
@@ -182,28 +179,29 @@ async def test_user_flow_errors(
             [],
             ProOSConnectTimeoutError,
             "cannot_connect",
-            [call(MIN_SETPOINT_PROBE), call(200)],
+            [call(MIN_SETPOINT_PROBE, read_back=False), call(200, read_back=False)],
             id="min_timeout_error",
-        ),
-        pytest.param(
-            [],
-            None,
-            "cannot_connect",
-            [call(MIN_SETPOINT_PROBE), call(200)],
-            id="min_no_telemetry",
         ),
         pytest.param(
             [MIN_SETPOINT],
             ProOSConnectTimeoutError,
             "cannot_connect",
-            [call(MIN_SETPOINT_PROBE), call(MAX_SETPOINT_PROBE), call(200)],
+            [
+                call(MIN_SETPOINT_PROBE, read_back=False),
+                call(MAX_SETPOINT_PROBE, read_back=False),
+                call(200, read_back=False),
+            ],
             id="max_timeout_error",
         ),
         pytest.param(
             [MIN_SETPOINT],
             Exception,
             "unknown",
-            [call(MIN_SETPOINT_PROBE), call(MAX_SETPOINT_PROBE), call(200)],
+            [
+                call(MIN_SETPOINT_PROBE, read_back=False),
+                call(MAX_SETPOINT_PROBE, read_back=False),
+                call(200, read_back=False),
+            ],
             id="max_unknown",
         ),
     ],
@@ -237,27 +235,6 @@ async def test_detect_setpoint_range_error(
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == reason
     assert mock_pro_os_connect.set_setpoint.mock_calls == setpoint_calls
-
-
-async def test_detect_setpoint_range_no_telemetry(
-    hass: HomeAssistant, mock_pro_os_connect: MagicMock
-) -> None:
-    """Test the flow aborts without changing the setpoint if telemetry is missing."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={CONF_HOST: HOST}
-    )
-    mock_pro_os_connect.get_telemetry.return_value = None
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={}
-    )
-
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "cannot_connect"
-    mock_pro_os_connect.set_setpoint.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -314,7 +291,7 @@ async def test_user_flow_already_configured(
     assert mock_config_entry.data[CONF_HOST] == "bofa.local"
 
 
-@pytest.mark.parametrize("telemetry_overrides", [{"is_running": 0}])
+@pytest.mark.parametrize("telemetry_overrides", [{"is_running": False}])
 async def test_zeroconf_flow(
     hass: HomeAssistant, mock_pro_os_connect: MagicMock
 ) -> None:

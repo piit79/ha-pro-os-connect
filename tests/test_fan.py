@@ -53,7 +53,7 @@ async def test_entities(
     await snapshot_platform(hass, entity_registry, snapshot, mock_config_entry.entry_id)
 
 
-@pytest.mark.parametrize("telemetry_overrides", [{"is_running": 0}])
+@pytest.mark.parametrize("telemetry_overrides", [{"is_running": False}])
 @pytest.mark.usefixtures("init_integration")
 async def test_fan_off(hass: HomeAssistant) -> None:
     """Test the fan reports zero speed when the extractor is stopped."""
@@ -99,7 +99,9 @@ async def test_set_speed(
         blocking=True,
     )
 
-    assert mock_pro_os_connect.set_setpoint.mock_calls == [call(setpoint)]
+    assert mock_pro_os_connect.set_setpoint.mock_calls == [
+        call(setpoint, read_back=False)
+    ]
     mock_pro_os_connect.pump_start.assert_called_once()
 
 
@@ -163,7 +165,9 @@ async def test_set_speed_zero(
         blocking=True,
     )
 
-    assert mock_pro_os_connect.set_setpoint.mock_calls == [call(MIN_SETPOINT)]
+    assert mock_pro_os_connect.set_setpoint.mock_calls == [
+        call(MIN_SETPOINT, read_back=False)
+    ]
     mock_pro_os_connect.pump_stop.assert_called_once()
     mock_pro_os_connect.pump_start.assert_not_called()
 

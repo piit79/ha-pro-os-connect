@@ -29,35 +29,26 @@ from .conftest import HOST, MAX_SETPOINT, SERIAL_NUMBER
 async def test_load_unload_config_entry(
     hass: HomeAssistant,
     init_integration: MockConfigEntry,
-    mock_pro_os_connect: MagicMock,
+    mock_pro_os_connect_class: MagicMock,
 ) -> None:
     """Test loading and unloading the config entry."""
     assert init_integration.state is ConfigEntryState.LOADED
+    # Other clients can connect to the device between requests
+    mock_pro_os_connect_class.assert_called_once_with(HOST, keep_connection=False)
 
     await hass.config_entries.async_unload(init_integration.entry_id)
     await hass.async_block_till_done()
 
     assert init_integration.state is ConfigEntryState.NOT_LOADED
-    mock_pro_os_connect.disconnect.assert_called_once()
 
 
-@pytest.mark.parametrize(
-    ("side_effect", "return_value"),
-    [
-        pytest.param(ProOSConnectTimeoutError, None, id="timeout_error"),
-        pytest.param(None, None, id="no_telemetry"),
-    ],
-)
 async def test_config_entry_not_ready(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_pro_os_connect: MagicMock,
-    side_effect: type[Exception] | None,
-    return_value: None,
 ) -> None:
     """Test the config entry is retried when the device cannot be reached."""
-    mock_pro_os_connect.get_telemetry.side_effect = side_effect
-    mock_pro_os_connect.get_telemetry.return_value = return_value
+    mock_pro_os_connect.get_telemetry.side_effect = ProOSConnectTimeoutError
     mock_config_entry.add_to_hass(hass)
 
     await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -110,16 +101,16 @@ async def test_migrate_entry_future_version(hass: HomeAssistant) -> None:
 @pytest.mark.parametrize(
     ("telemetry_overrides", "config_entry_options", "interval"),
     [
-        pytest.param({"is_running": 0}, {}, 10, id="idle_default"),
-        pytest.param({"is_running": 1}, {}, 5, id="running_default"),
+        pytest.param({"is_running": False}, {}, 10, id="idle_default"),
+        pytest.param({"is_running": True}, {}, 5, id="running_default"),
         pytest.param(
-            {"is_running": 0},
+            {"is_running": False},
             {CONF_SCAN_INTERVAL_IDLE: 30, CONF_SCAN_INTERVAL_RUNNING: 2},
             30,
             id="idle_configured",
         ),
         pytest.param(
-            {"is_running": 1},
+            {"is_running": True},
             {CONF_SCAN_INTERVAL_IDLE: 30, CONF_SCAN_INTERVAL_RUNNING: 2},
             2,
             id="running_configured",
@@ -139,7 +130,7 @@ async def test_scan_interval_follows_running_state(
 ) -> None:
     """Test the polling slows down once the extractor stops."""
     mock_pro_os_connect.get_telemetry.return_value = replace(
-        mock_pro_os_connect.get_telemetry.return_value, is_running=0
+        mock_pro_os_connect.get_telemetry.return_value, is_running=False
     )
 
     freezer.tick(timedelta(seconds=5))
